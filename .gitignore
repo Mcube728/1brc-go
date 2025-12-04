@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.prof
 
 # Text file(since the input text file is ~14GB)
 *.txt
