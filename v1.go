@@ -3,76 +3,18 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"time"
+	"io"
 	"strconv"
 	"strings"
-	"runtime/pprof"
 )
 
 
-type Station struct {
-	Name 		string
-	temp_min 	float64
-	temp_max 	float64
-	temp_sum 	float64
-	count 		int
-}
-
-
-func startCPUProfile(filepath string) (func(), error){
-	f, err := os.Create(filepath)
-	if err != nil {
-		return nil, err
-	}
-	//start cpu profiling
-	if err := pprof.StartCPUProfile(f); err != nil {
-		f.Close()
-		return nil, err
-	}
-	//return stop function
-	stop := func(){
-		pprof.StopCPUProfile()
-		f.Close()
-	}
-	return stop, nil
-}
-
-
-func (s *Station) Mean() float64{
-	// a simple function to calculate a station's mean. 
-	return s.temp_sum / float64(s.count)
-}
-
-
-func (s *Station) Update(temp float64){
-	if s.count == 0 { // if station is encountered for first time
-		s.temp_min = temp
-		s.temp_max = temp
-	} else {
-		s.temp_min = min(s.temp_min, temp)
-		s.temp_max = max(s.temp_max, temp)
-	}
-	s.temp_sum += temp
-	s.count += 1
-}
-
-
-func main(){
-	stopProfiling, err := startCPUProfile("cpu.prof")
-	if err != nil {
-		fmt.Println("Could not start CPU profiling: ", err)
-		return
-	}
-	defer stopProfiling()
-
-	t0 := time.Now()
-	file_path := "measurements.txt"
-	
+func v1(inputPath string, output io.Writer) error {
 	// Read File
-	file, err := os.Open(file_path)
+	file, err := os.Open(inputPath)
 	if err != nil{
 		fmt.Println("File reading error: ", err)
-		return
+		return err
 	}
 	defer file.Close()
 
@@ -100,14 +42,14 @@ func main(){
 	// Check for scanner errors
 	if err := scanner.Err(); err != nil{
 		fmt.Println("Error reading file: ", err)
-		return
+		return err
 	}
-	c := 0
+	
+	fmt.Fprint(output, "{")
 	for name, station := range stations {
-		if c >= 15 { break }
-		fmt.Printf("%s: min=%.1f, max=%.1f, mean=%.1f\n", name, station.temp_min, station.temp_max, station.Mean())
-		c++
+
+		fmt.Fprintf(output, "%s: min=%.1f, max=%.1f, mean=%.1f,\n", name, station.temp_min, station.temp_max, station.Mean())
 	}
-	elapsed := time.Since(t0)
-	fmt.Printf("\nProcessed %d stations in %v\n", len(stations), elapsed)
+	fmt.Fprint(output, "}\n")
+	return nil
 }
