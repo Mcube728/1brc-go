@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"strconv"
-	"strings"
+	//"strconv"
+	//"strings"
+	"bytes"
 	//"runtime/pprof"
 )
 
@@ -51,6 +52,29 @@ func (s *Station) Update(temp float64){
 	s.count += 1
 }
 
+
+func Parse_temp( tempBytes []byte) float64{
+	negative := false
+	index := 0
+	if tempBytes[index] == '-' {
+		index ++
+		negative = true
+	}
+	temp := float64(tempBytes[index] - '0')
+	index++
+	if tempBytes[index] != '.' {
+		temp = temp*10 + float64(tempBytes[index]-'0')
+		index++
+	}
+	index++
+	temp += float64(tempBytes[index]-'0') / 10
+	if negative{
+		temp = -temp
+	}
+	return temp
+}
+
+
 func main(){
 	/*stopProfiling, err := startCPUProfile("cpu.prof")
 	if err != nil {
@@ -75,13 +99,13 @@ func main(){
 	// Read Lines
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan(){
-		line := scanner.Text()
-		sep_idx := strings.Index(line, ";")	// split at semicolon, then slice string to get station name and temperature, should be less computationally expensive opposed to strings.split?
-		name := line[:sep_idx]
-		temp, err := strconv.ParseFloat(line[sep_idx+1:], 64)
-		if err != nil{
-			continue
-		}
+		line := scanner.Bytes()
+		sep_idx := bytes.IndexByte(line, ';')	// split at semicolon, then slice string to get station name and temperature, should be less computationally expensive opposed to strings.split?
+		
+		name := string(line[:sep_idx])
+		tempBytes := line[sep_idx+1:]
+		temp := Parse_temp(tempBytes)
+		
 		s := stations[name]
 		if s == nil {
 			stations[name] = &Station{
