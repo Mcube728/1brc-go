@@ -6,6 +6,7 @@ import (
 	"time"
 	"strconv"
 	"strings"
+	"runtime/pprof"
 )
 
 
@@ -15,6 +16,25 @@ type Station struct {
 	temp_max 	float64
 	temp_sum 	float64
 	count 		int
+}
+
+
+func startCPUProfile(filepath string) (func(), error){
+	f, err := os.Create(filepath)
+	if err != nil {
+		return nil, err
+	}
+	//start cpu profiling
+	if err := pprof.StartCPUProfile(f); err != nil {
+		f.Close()
+		return nil, err
+	}
+	//return stop function
+	stop := func(){
+		pprof.StopCPUProfile()
+		f.Close()
+	}
+	return stop, nil
 }
 
 
@@ -38,6 +58,13 @@ func (s *Station) Update(temp float64){
 
 
 func main(){
+	stopProfiling, err := startCPUProfile("cpu.prof")
+	if err != nil {
+		fmt.Println("Could not start CPU profiling: ", err)
+		return
+	}
+	defer stopProfiling()
+
 	t0 := time.Now()
 	file_path := "measurements.txt"
 	
