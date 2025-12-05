@@ -14,7 +14,7 @@ import (
 )
 
 type versionFunc func(string, io.Writer) error
-var versionFuncs = []versionFunc{v1, v2, v3}
+var versionFuncs = []versionFunc{v1, v2, v3, v4}
 var maxGoroutines int
 
 func main() {
